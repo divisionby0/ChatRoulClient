@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false">
+	<fx:Script>
+		<![CDATA[
+			import dev.div0.textChat.TextChat;
+			import dev.div0.textChat.TextChatMessage;
+			
+			[Bindable]
+			private var message:TextChatMessage;
+			
+			[Bindable]
+			private var prefixColor:uint = 0x000000;
+			
+			override public function set data(value:Object):void{
+				super.data = value;
+				message = value as TextChatMessage;
+				
+				if(value){
+					switch(message.prefix){
+						case TextChat.OPPONENT_MESSAGE_PREFIX:
+							prefixColor = 0xfa0432;
+							
+							break;
+						case TextChat.OWNER_MESSAGE_PREFIX:
+							prefixColor = 0x4fab0b;
+							break;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup top="3" 
+			  bottom="3" 
+			  left="5" >
+		<s:Label text="{message.prefix}" color="{prefixColor}" fontWeight="bold"/>
+
+		<s:Label text="{message.message}" 
+				 maxWidth="500"/>
+	</s:HGroup>
+	
+</s:ItemRenderer>

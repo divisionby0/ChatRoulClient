@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<s:SparkButtonSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+             xmlns:s="library://ns.adobe.com/flex/spark" 
+             xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+             minWidth="47" 
+			 minHeight="30" >
+     
+    <fx:Metadata>
+        <![CDATA[ 
+        [HostComponent("spark.components.Button")]
+        ]]>
+    </fx:Metadata> 
+        
+    <!-- states -->
+    <s:states>
+        <s:State name="up" />
+        <s:State name="over" />
+        <s:State name="down" />
+        <s:State name="disabled" />
+    </s:states>
+
+	<fx:Script>
+		<![CDATA[
+			import spark.components.Button;
+			
+			override protected function commitProperties():void
+			{
+				super.commitProperties();
+				hostComponent.buttonMode = true;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Rect width="100%" height="100%" radiusX="10" radiusY="10">
+		<s:fill>
+			<s:SolidColor color="0xeeeeee" color.over="0xffffff" color.down="0xdddddd"/>
+		</s:fill>
+	</s:Rect>
+    
+    
+    <!-- layer 8: text -->
+    <!--- @copy spark.components.supportClasses.ButtonBase#labelDisplay  -->
+    <s:Label id="labelDisplay"
+             textAlign="center"
+             maxDisplayedLines="1"
+             horizontalCenter="0" 
+             left="8" 
+			 right="8" 
+			 top="8"
+			 bottom="0"
+			 alpha.disabled=".3">
+    </s:Label>
+    
+</s:SparkButtonSkin>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 paddingBottom="3"
+		 gap="0"
+		 creationComplete="vgroup1_creationCompleteHandler(event)" xmlns:controls="dev.div0.controls.*">
+	
+	<fx:Metadata>
+		[Event(name="sendMessage", type="dev.div0.textChat.TextChatEvent")]
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import dev.div0.net.events.ServerEvent;
+			import dev.div0.utils.Dispatcher;
+			import dev.div0.utils.log.LogEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			public static const OWNER_MESSAGE_PREFIX:String = "you: ";
+			public static const OPPONENT_MESSAGE_PREFIX:String = "stranger: ";
+			
+			[Bindable]
+			private var messages:ArrayCollection = new ArrayCollection();
+			
+			private var inputMinCharacters:int = 1;
+			//private var ownMessagePrefix:String = "you: ";
+			//private var opponentMessagePrefix:String = "stranger: ";
+			
+			public function addMessage(_message:String):void{
+				var message:TextChatMessage = new TextChatMessage(OWNER_MESSAGE_PREFIX, _message);
+				messages.addItem(message);
+			}
+			public function clear():void{
+				messages.removeAll();
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				graphics.clear();
+				graphics.beginFill(0xffffff);
+				graphics.drawRect(0,0, unscaledWidth, unscaledHeight);
+				graphics.endFill();
+			}
+			
+			private function sendMessageButton_clickHandler(event:MouseEvent):void
+			{
+				sendMessageRequest();
+			}
+			
+			private function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				Dispatcher.getInstance().addEventListener(ServerEvent.CHAT_MESSAGE, chatMessageHandler);
+			}
+			
+			private function chatMessageHandler(event:ServerEvent):void{
+				var parsedMessage:String = parseChatMessage(event.data.toString());
+				
+				var message:TextChatMessage = new TextChatMessage(OPPONENT_MESSAGE_PREFIX, parsedMessage);
+				messages.addItem(message);
+				
+				//messages.addItem({label:opponentMessagePrefix+parsedMessage});
+			}
+			
+			private function parseChatMessage(messageData:String):String
+			{
+				var parsedMessage:Object = JSON.parse(messageData);
+				return parsedMessage.message;
+			}
+			private function messageTextInput_focusInHandler(event:FocusEvent):void
+			{
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyboardKeyDownHandler);
+			}
+			
+			private function messageTextInput_focusOutHandler(event:FocusEvent):void
+			{
+				stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyboardKeyDownHandler);
+			}
+			
+			private function log(message:String):void{
+				trace(message);
+				var logEvent:LogEvent = new LogEvent(LogEvent.LOG);
+				logEvent.data = message;
+				Dispatcher.getInstance().dispatchEvent(logEvent);
+			}
+			
+			private function keyboardKeyDownHandler(event:KeyboardEvent):void
+			{
+				var isKeyEnter:Boolean = (event.keyCode == 13);
+				if(isKeyEnter){
+					sendMessageRequest();
+				}
+			}
+			
+			private function sendMessageRequest():void
+			{
+				var messageText:String = messageTextInput.text;
+				
+				messageTextInput.text = "";
+				
+				if(messageText!="" && messageText.length>inputMinCharacters){
+					var textChatEvent:TextChatEvent = new TextChatEvent(TextChatEvent.SEND_MESSAGE);
+					textChatEvent.data = messageText;
+					dispatchEvent(textChatEvent);
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<controls:TextChatList id="messagesList"
+			width="100%" 
+			height="100%"
+			skinClass="dev.div0.controls.skins.ListSkin"
+			itemRenderer="dev.div0.controls.renderers.TextChatItemRenderer"
+			dataProvider="{messages}"/>
+	
+	<s:HGroup width="100%" 
+			  height="40"
+			  paddingTop="2"
+			  paddingLeft="2"
+			  paddingRight="2"
+			  verticalAlign="middle">
+		<s:Group width="90%" height="100%">
+			<s:Rect width="100%" height="100%">
+				<s:fill>
+					<s:SolidColor color="0xeeeeee"/>
+				</s:fill>
+			</s:Rect>
+			<s:TextInput id="messageTextInput" 
+						 width="100%"
+						 top="8"
+						 prompt="input text here..."
+						 focusIn="messageTextInput_focusInHandler(event)"
+						 focusOut="messageTextInput_focusOutHandler(event)"/>
+		</s:Group>
+		
+		<s:Button id="sendMessageButton" 
+				  label="Send"
+				  skinClass="dev.div0.controls.skins.GreenColorButtonSkin"
+				  click="sendMessageButton_clickHandler(event)"/>
+	</s:HGroup>
+</s:VGroup>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  width="100%"
+		  height="80"
+		  paddingLeft="80"
+		  verticalAlign="middle"
+		  creationComplete="hgroup1_creationCompleteHandler(event)">
+	
+	<fx:Metadata>
+		[Event(name="startSearch", type="dev.div0.controlsView.ControlsEvent")]
+		[Event(name="stopSearch", type="dev.div0.controlsView.ControlsEvent")]
+	</fx:Metadata>
+	
+	<s:states>
+		<s:State name="SEARCHING"/>
+		<s:State name="IDLE"/>
+		<s:State name="CHATTING"/>
+	</s:states>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			private static const IDLE:String = "IDLE";
+			private static const SEARCHING:String = "SEARCHING";
+			private static const CHATTING:String = "CHATTING";
+			
+			
+			public function onChating():void{
+				currentState = CHATTING;
+			}
+			public function onSearching():void{
+				currentState = SEARCHING;
+			}
+			
+			private function startSearchButton_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new ControlsEvent(ControlsEvent.START_SEARCH));
+				currentState = SEARCHING;
+			}
+			
+			private function stopSearchButton_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new ControlsEvent(ControlsEvent.STOP_SEARCH));
+				currentState = IDLE;
+			}
+			
+			private function hgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				currentState = IDLE;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Button id="startSearchButton" 
+			  label="Start" 
+			  enabled.SEARCHING="false"
+			  enabled.CHATTING="true"
+			  enabled.IDLE="true"
+			  skinClass="dev.div0.controls.skins.GreenColorButtonSkin"
+			  click="startSearchButton_clickHandler(event)"/>
+	<s:HGroup width="100%" horizontalAlign="right" paddingRight="140">
+		<s:Button id="stopSearchButton"
+				  enabled.CHATTING="true"
+				  enabled.SEARCHING="true"
+				  enabled="false"
+				  skinClass="dev.div0.controls.skins.RedColorButtonSkin"
+				  label="Stop" click="stopSearchButton_clickHandler(event)"/>
+	</s:HGroup>
+	
+</s:HGroup>

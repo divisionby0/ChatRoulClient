@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:selfVideo="dev.div0.selfVideo.*"
+			   xmlns:textChat="dev.div0.textChat.*"
+			   xmlns:controlsView="dev.div0.controlsView.*" 
+			   xmlns:log="dev.div0.log.*"
+			   xmlns:opponnetVideo="dev.div0.opponnetVideo.*"
+			   width="719" 
+			   height="540"
+			   creationComplete="application1_creationCompleteHandler(event)" xmlns:controls="dev.div0.controls.*" >
+	<s:states>
+		<s:State name="IDLE"/>
+		<s:State name="SEARCHING"/>
+		<s:State name="CHATTING"/>
+	</s:states>
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace selfVideo "dev.div0.selfVideo.*";
+		@namespace opponnetVideo "dev.div0.opponnetVideo.*";
+		@namespace textChat "dev.div0.textChat.*";
+		@namespace controlsView "dev.div0.controlsView.*";
+		@namespace log "dev.div0.log.*";
+		@namespace skins "dev.div0.controls.skins.*";
+		@namespace controls "dev.div0.controls.*";
+		
+		@font-face{
+			src: url("assets/9527.ttf");
+			fontFamily: "CustomFont";
+			fontSize:20;
+		}
+
+		skins|ButtonSkin {
+			fontFamily: CustomFont;
+			fontLookup: embeddedCFF;
+			fontSize: 34;
+		}
+		s|TextInput{
+			borderVisible:false;
+			focusAlpha:0;
+			color:#5e5d5d;
+			fontSize:14;
+			contentBackgroundAlpha:0;
+		}
+		s|List{
+			borderVisible:false;
+			focusAlpha:0;
+			color:#5e5d5d;
+			fontSize:14;
+			contentBackgroundColor:#eeeeee;
+		}
+		
+		controls|HeaderLabel{
+			fontFamily:CustomFont;
+			color:#ffffff;
+			fontSize:30;
+		}
+	</fx:Style>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import dev.div0.Settings;
+			import dev.div0.controlsView.ControlsEvent;
+			import dev.div0.media.PublisherMedia;
+			import dev.div0.net.PublisherStream;
+			import dev.div0.net.Server;
+			import dev.div0.net.SubscriberStream;
+			import dev.div0.net.events.ServerEvent;
+			import dev.div0.net.events.StreamEvent;
+			import dev.div0.textChat.TextChatEvent;
+			import dev.div0.utils.Dispatcher;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.events.FlexEvent;
+			
+			private static const IDLE:String = "IDLE";
+			private static const SEARCHING:String = "SEARCHING";
+			private static const CHATTING:String = "CHATTING";
+			
+			private var publisherStream:PublisherStream;
+			private var subscriberStream:SubscriberStream;
+			private var publisherMedia:PublisherMedia;
+			
+			private var streamId:String;
+			
+			private var server:Server;
+			
+			[Bindable]
+			private var userState:String = IDLE;
+			
+			private function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				streamId = "stream_"+Math.round(Math.random()*100000);
+				server = new Server(Settings.server, streamId);
+				currentState = IDLE;
+				publisherMedia = new PublisherMedia();
+				selfView.setCamera(publisherMedia.getCamera());
+				
+				publisherStream = new PublisherStream(streamId,publisherMedia);
+				//publisherStream.start();
+				
+				subscriberStream = new SubscriberStream("");
+				//subscriberStream.start();
+				
+				Dispatcher.getInstance().addEventListener(ServerEvent.OPPONENT_CONNECTION_REQUEST, opponentConnectionRequestHandler);
+				Dispatcher.getInstance().addEventListener(ServerEvent.USER_STATE_CHANGED, userStateChangedHandler);
+				setTimeout(sendTestMessage, 2000);
+			}
+			
+			function sendTestMessage():void{
+				textChat.addMessage("test message")
+			}
+			
+			private function opponentConnectionRequestHandler(event:ServerEvent):void
+			{
+				Settings.opponentStreamID = event.data.opponentStreamId;
+				onOpponentConnected();
+			}
+			
+			private function opponentStreamStartedHandler(event:Event):void
+			{
+				//log("opp stream started - start playing it");
+				opponentView.play(subscriberStream.getStream());
+			}
+			
+			private function userStateChangedHandler(event:ServerEvent):void
+			{
+				currentState = event.data.toString();
+				//log("state changed "+currentState);
+				//userState = currentState;
+				switch(currentState){
+					case IDLE:
+						Dispatcher.getInstance().removeEventListener(StreamEvent.STREAM_READY, opponentStreamStartedHandler);
+						
+						stopStreams();
+						clearOpponentView();
+						clearTextChat();
+						break;
+					case CHATTING:
+						subscriberStream.start();
+						publisherStream.start();
+						controlsView.onChating();
+						break;
+					case SEARCHING:
+						Dispatcher.getInstance().removeEventListener(StreamEvent.STREAM_READY, opponentStreamStartedHandler);
+						stopStreams();
+						clearOpponentView();
+						clearTextChat();
+						controlsView.onSearching();
+						break;
+				}
+			}
+			
+			private function stopStreams():void{
+				subscriberStream.stop();
+				publisherStream.stop();
+			}
+			private function clearOpponentView():void{
+				opponentView.clear();
+			}
+			private function clearTextChat():void{
+				textChat.clear();
+			}
+			private function stopMedia():void{
+				if(publisherMedia){
+					publisherMedia.clear();
+				}
+			}
+			private function startMedia():void{
+				if(publisherMedia){
+					publisherMedia.init();
+				}
+			}
+			
+			private function sendMessageHandler(event:TextChatEvent):void
+			{
+				if(currentState == CHATTING){
+					var message:String = event.data.toString();
+					server.sendChatMessage(message);
+					
+					// add message to view
+					textChat.addMessage(message);
+				}
+			}
+			
+			private function controlsView_startSearchHandler(event:ControlsEvent):void
+			{
+				server.startSearch();
+			}
+			
+			private function controlsView_stopSearchHandler(event:ControlsEvent):void
+			{
+				server.stopSearch();
+			}
+			
+			private function textChat_sendMessageHandler(event:TextChatEvent):void
+			{
+				if(currentState == CHATTING){
+					var message:String = event.data.toString();
+					server.sendChatMessage(message);
+					
+					// add message to view
+					textChat.addMessage(message);
+				}
+			}
+			
+			private function onOpponentConnected():void
+			{
+				subscriberStream.setStreamId(Settings.opponentStreamID);
+				Dispatcher.getInstance().addEventListener(StreamEvent.STREAM_READY, opponentStreamStartedHandler);
+				subscriberStream.start();
+				publisherStream.start();
+				textChat.clear();
+			}
+		]]>
+	</fx:Script>
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0x000000"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:VGroup width="100%" 
+			  height="100%" 
+			  gap="0">
+		<!-- Video -->
+		<s:HGroup id="videoGroup" 
+				  width="100%"
+				  height="310"
+				  horizontalAlign="center"
+				  verticalAlign="bottom"
+				  paddingLeft="6"
+				  paddingRight="3"
+				  paddingTop="3">
+			<s:VGroup width="100%" horizontalAlign="center">
+				<controls:HeaderLabel id="headerLabel" 
+						 text="CHATOCHAT" 
+						 height="100" 
+						 verticalAlign="middle"
+						 paddingTop="30"/>
+				<selfVideo:SelfVideo id="selfView" />
+			</s:VGroup>
+			
+			<opponnetVideo:OpponentVideo id="opponentView"/>
+		</s:HGroup>
+		
+		<controlsView:ControlsView id="controlsView" 
+								   startSearch="controlsView_startSearchHandler(event)"
+								   stopSearch="controlsView_stopSearchHandler(event)"/>
+		
+		<!-- text chat -->
+		<textChat:TextChat id="textChat" 
+						   width="100%"
+						   height="30%"
+						   sendMessage="textChat_sendMessageHandler(event)"/>
+	</s:VGroup>
+	
+	<!--
+	<log:LogView width="400" 
+				 height="160" 
+				 bottom="210"/>
+	<s:Label text="{currentState}"
+			 color="0xff0000" top="30"/>
+	-->
+</s:Application>

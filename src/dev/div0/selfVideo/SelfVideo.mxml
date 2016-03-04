@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="{videoWidth}"
+		 height="{videoHeight}"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			private var camera:Camera;
+			private var video:Video;
+			
+			[Bindable]
+			private var videoWidth:int = 290;
+			
+			[Bindable]
+			private var videoHeight:int = 219;
+			
+			public function setCamera(camera:Camera):void{
+				this.camera = camera;
+				if(video){
+					video.visible = true;
+				}
+				attachCamera();
+			}
+			public function removeCamera():void{
+				if(video){
+					video.attachCamera(null);
+					video.clear();
+					video.visible = false;
+				}
+			}
+			
+			private function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				video = new Video(videoWidth, videoHeight);
+				container.addChild(video);
+				attachCamera();
+			}
+			
+			private function attachCamera():void{
+				if(video && camera){
+					video.attachCamera(camera);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0x747574"/>
+		</s:fill>
+	</s:Rect>
+	<mx:UIComponent id="container"/>
+</s:Group>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 addedToStage="hgroup1_addedToStageHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			private var stream:NetStream;
+			private var video:Video;
+			
+			private var videoWidth:int = 459;
+			private var videoHeight:int = 311;
+			
+			private var aspectRatio:Number = 1.33;
+			
+			[Embed(source="assets/whitenoice.jpg")]
+			[Bindable]
+			public var whiteNoiceImage:Class;
+			
+			
+			public function clear():void{
+				if(video){
+					video.attachNetStream(null);
+					video.clear();
+					video.visible = false;
+				}
+			}
+			public function play(stream:NetStream):void
+			{ 
+				this.stream = stream;
+				attachStream();
+				video.visible = true;
+			}
+			
+			private function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				video = new Video(videoWidth, videoHeight);
+				container.addChild(video);
+				attachStream();
+			}
+			
+			private function attachStream():void{
+				if(video && stream){
+					video.attachNetStream(stream);
+				}
+			}
+			
+			private function hgroup1_addedToStageHandler(event:Event):void
+			{
+				resizeVideo();
+			}
+			
+			private function resizeVideo():void
+			{
+				video.height = videoHeight;
+				video.width = video.height*aspectRatio;
+				width = video.width;
+				height = video.height;
+			}
+		]]>
+	</fx:Script>
+	<s:Group width="100%" height="100%" top="3">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0xffffff"/>
+			</s:fill>
+		</s:Rect>
+		<s:BitmapImage source="{whiteNoiceImage}" width="100%" height="100%"/>
+		<mx:UIComponent id="container"/>
+	</s:Group>
+</s:Group>
